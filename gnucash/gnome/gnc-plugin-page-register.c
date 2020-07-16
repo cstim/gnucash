@@ -290,10 +290,17 @@ static GList* invoices_from_transaction (Transaction* trans);
 #define PASTE_TRANSACTION_LABEL          N_("_Paste Transaction")
 #define DUPLICATE_TRANSACTION_LABEL      N_("Dup_licate Transaction")
 #define DELETE_TRANSACTION_LABEL         N_("_Delete Transaction")
-#define ASSOCIATE_TRANSACTION_LABEL      N_("Update _Association for Transaction")
-#define ASSOCIATE_TRANSACTION_OPEN_LABEL  N_("_Open Association for Transaction")
-#define ASSOCIATE_TRANSACTION_REMOVE_LABEL N_("Re_move Association from Transaction")
-#define JUMP_ASSOCIATED_INVOICE_LABEL     N_("Open Associated Invoice")
+/* Translators: This is a menu item that opens a dialog for associating an
+   external file or URL with the bill, invoice, transaction, or voucher or
+   removing such an association. */
+#define ASSOCIATE_TRANSACTION_LABEL      N_("_Manage Associated Document...")
+/* Translators: This is a menu item that opens an external file or URI that may
+   be associated with the current bill, invoice, transaction, or voucher using
+   the operating system's default application for the file or URI mime type. */
+#define ASSOCIATE_TRANSACTION_OPEN_LABEL  N_("_Open Associated Document")
+/* Translators: This is a menu item that will open the bill, invoice, or voucher
+   that is posted to the current transaction if there is one. */
+#define JUMP_ASSOCIATED_INVOICE_LABEL     N_("Jump to Invoice")
 #define CUT_SPLIT_LABEL                  N_("Cu_t Split")
 #define COPY_SPLIT_LABEL                 N_("_Copy Split")
 #define PASTE_SPLIT_LABEL                N_("_Paste Split")
@@ -304,10 +311,9 @@ static GList* invoices_from_transaction (Transaction* trans);
 #define PASTE_TRANSACTION_TIP            N_("Paste the transaction from the clipboard")
 #define DUPLICATE_TRANSACTION_TIP        N_("Make a copy of the current transaction")
 #define DELETE_TRANSACTION_TIP           N_("Delete the current transaction")
-#define ASSOCIATE_TRANSACTION_TIP        N_("Update Association for the current transaction")
-#define ASSOCIATE_TRANSACTION_OPEN_TIP   N_("Open Association for the current transaction")
-#define ASSOCIATE_TRANSACTION_REMOVE_TIP N_("Remove the association from the current transaction")
-#define JUMP_ASSOCIATED_INVOICE_TIP      N_("Open the associated invoice")
+#define ASSOCIATE_TRANSACTION_TIP        N_("Add, change, or unlink the document associated with the current transaction")
+#define ASSOCIATE_TRANSACTION_OPEN_TIP   N_("Open the associated document for the current transaction")
+#define JUMP_ASSOCIATED_INVOICE_TIP      N_("Jump to the associated bill, invoice, or voucher")
 #define CUT_SPLIT_TIP                    N_("Cut the selected split into clipboard")
 #define COPY_SPLIT_TIP                   N_("Copy the selected split into clipboard")
 #define PASTE_SPLIT_TIP                  N_("Paste the split from the clipboard")
@@ -421,11 +427,6 @@ static GtkActionEntry gnc_plugin_page_register_actions [] =
         G_CALLBACK (gnc_plugin_page_register_cmd_associate_transaction_open)
     },
     {
-        "AssociateTransactionRemoveAction", NULL, ASSOCIATE_TRANSACTION_REMOVE_LABEL, NULL,
-        ASSOCIATE_TRANSACTION_REMOVE_TIP,
-        G_CALLBACK (gnc_plugin_page_register_cmd_associate_transaction_remove)
-    },
-    {
         "JumpAssociatedInvoiceAction", NULL, JUMP_ASSOCIATED_INVOICE_LABEL, NULL,
         JUMP_ASSOCIATED_INVOICE_TIP,
         G_CALLBACK (gnc_plugin_page_register_cmd_jump_associated_invoice)
@@ -485,8 +486,11 @@ static GtkActionEntry gnc_plugin_page_register_actions [] =
         G_CALLBACK (gnc_plugin_page_register_cmd_exchange_rate)
     },
     {
-        "JumpTransactionAction", GNC_ICON_JUMP_TO, N_ ("_Jump"), NULL,
-        N_ ("Jump to the corresponding transaction in the other account"),
+/* Translators: This is a menu item that will open a register tab for the
+   account of the first other account in the current transaction's split list
+   with focus on the current transaction's entry in that register. */
+        "JumpTransactionAction", GNC_ICON_JUMP_TO, N_ ("_Jump to the other account"), NULL,
+        N_ ("Open a new register tab for the other account with focus on this transaction."),
         G_CALLBACK (gnc_plugin_page_register_cmd_jump)
     },
     {
@@ -598,14 +602,14 @@ static action_toolbar_labels toolbar_labels[] =
     { "DeleteTransactionAction",            N_ ("Delete") },
     { "DuplicateTransactionAction",         N_ ("Duplicate") },
     { "SplitTransactionAction",             N_ ("Split") },
+    { "JumpTransactionAction",              N_ ("Jump") },
     { "ScheduleTransactionAction",          N_ ("Schedule") },
     { "BlankTransactionAction",             N_ ("Blank") },
     { "ActionsReconcileAction",             N_ ("Reconcile") },
     { "ActionsAutoClearAction",             N_ ("Auto-clear") },
-    { "AssociateTransactionAction",         N_ ("Update Association") },
+    { "AssociateTransactionAction",         N_ ("Manage Association") },
     { "AssociateTransactionOpenAction",     N_ ("Open Association") },
-    { "AssociateTransactionRemoveAction",   N_ ("Remove Association") },
-    { "JumpAssociatedInvoiceAction",        N_ ("Open Invoice") },
+    { "JumpAssociatedInvoiceAction",        N_ ("Invoice") },
     { NULL, NULL },
 };
 
@@ -989,7 +993,6 @@ static const char* readonly_inactive_actions[] =
     "ScrubAllAction",
     "ScrubCurrentAction",
     "AssociateTransactionAction",
-    "AssociateTransactionRemoveAction",
     NULL
 };
 
@@ -1015,7 +1018,6 @@ static const char* tran_action_labels[] =
     DELETE_TRANSACTION_LABEL,
     ASSOCIATE_TRANSACTION_LABEL,
     ASSOCIATE_TRANSACTION_OPEN_LABEL,
-    ASSOCIATE_TRANSACTION_REMOVE_LABEL,
     JUMP_ASSOCIATED_INVOICE_LABEL,
     NULL
 };
@@ -1030,7 +1032,6 @@ static const char* tran_action_tips[] =
     DELETE_TRANSACTION_TIP,
     ASSOCIATE_TRANSACTION_TIP,
     ASSOCIATE_TRANSACTION_OPEN_TIP,
-    ASSOCIATE_TRANSACTION_REMOVE_TIP,
     JUMP_ASSOCIATED_INVOICE_TIP,
     NULL
 };
@@ -1138,10 +1139,6 @@ gnc_plugin_page_register_ui_update (gpointer various,
 
     action = gnc_plugin_page_get_action (GNC_PLUGIN_PAGE(page),
                                          "AssociateTransactionOpenAction");
-    gtk_action_set_sensitive (GTK_ACTION(action), (uri ? TRUE:FALSE));
-
-    action = gnc_plugin_page_get_action (GNC_PLUGIN_PAGE (page),
-                                         "AssociateTransactionRemoveAction");
     gtk_action_set_sensitive (GTK_ACTION(action), (uri ? TRUE:FALSE));
 
     /* Set 'ExecAssociatedInvoice'
